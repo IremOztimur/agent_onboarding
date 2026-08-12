@@ -1,0 +1,73 @@
+# Python check config. Merge into the project's pyproject.toml.
+# Delete what does not apply; keep everything you keep green.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "apps"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",    # pycodestyle
+  "F",         # pyflakes
+  "I",         # isort
+  "UP",        # pyupgrade
+  "B",         # bugbear
+  "ANN",       # enforces: "type hints on everything"
+  "D",         # enforces: "docstrings on everything"
+  "RUF",
+]
+ignore = [
+  "D203",      # conflicts with D211
+  "D213",      # conflicts with D212
+  "ANN401",    # allow Any where genuinely needed
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+# enforces: "from __future__ import annotations at the top of every module"
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "D"]
+
+# ---------------------------------------------------------------------------
+# Dependency contracts. This is where the PRIME INVARIANT becomes mechanical.
+# Run: uv run lint-imports --config pyproject.toml
+# ---------------------------------------------------------------------------
+
+[tool.importlinter]
+root_packages = ["{{package}}"]
+exclude_type_checking_imports = true
+
+# Pattern A -- forbid an entire category of dependency.
+# Example: "no LLM SDK may be imported anywhere in this package."
+[[tool.importlinter.contracts]]
+id = "no-llm-sdks"
+name = "{{package}} must not import model-provider SDKs"
+type = "forbidden"
+source_modules = ["{{package}}"]
+forbidden_modules = ["anthropic", "openai", "langchain", "llama_index"]
+
+# Pattern B -- protect the seam. Generic code must not know about specific code.
+# This is the mechanical form of "source-specific code exists in exactly two
+# places; everything downstream is shared, forever."
+[[tool.importlinter.contracts]]
+id = "core-stays-generic"
+name = "Shared pipeline modules must not import any specific adapter"
+type = "forbidden"
+source_modules = [
+  "{{package}}.pipeline",
+  "{{package}}.contracts",
+  "{{package}}.storage",
+]
+forbidden_modules = ["{{package}}.{{adapters_package}}"]
+
+# Pattern C -- layered architecture, when the project grows layers.
+# [[tool.importlinter.contracts]]
+# id = "layers"
+# name = "Layer hierarchy"
+# type = "layers"
+# layers = ["{{app}}", "{{domain}}", "{{core}}"]

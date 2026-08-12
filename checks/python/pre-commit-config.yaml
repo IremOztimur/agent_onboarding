@@ -1,0 +1,67 @@
+---
+# Copy to .pre-commit-config.yaml in the project root, then:
+#   uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
+#
+# Hook revs are pinned to SHAs with a `# frozen:` comment so agent-driven
+# runs are reproducible. Update deliberately, never automatically.
+
+default_stages: [pre-commit]
+
+repos:
+  # --- minimal core -------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: no-commit-to-branch          # enforces: never commit on protected branches
+        args: [--branch, main, --branch, master]
+      - id: detect-private-key
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-ast
+      - id: debug-statements
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.16
+    hooks:
+      - id: ruff-check
+        args: [--fix, --config=pyproject.toml]
+      - id: ruff-format
+        args: [--config=pyproject.toml]
+
+  - repo: https://github.com/seddonym/import-linter
+    rev: v2.11
+    hooks:
+      - id: import-linter                # enforces: the prime invariant
+        args: [--config, pyproject.toml]
+        pass_filenames: false
+
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.25.0
+    hooks:
+      - id: commitlint                   # enforces: Conventional Commits
+        stages: [commit-msg]
+        additional_dependencies: ['@commitlint/config-conventional']
+
+  # --- full setup: uncomment as the project earns them --------------------
+  #
+  # - repo: https://github.com/astral-sh/uv-pre-commit
+  #   rev: 0.11.20
+  #   hooks:
+  #     - id: uv-lock
+  #
+  # - repo: local
+  #   hooks:
+  #     - id: tests
+  #       name: Tests
+  #       entry: uv run pytest
+  #       language: system
+  #       pass_filenames: false
+  #       types: [python]
+  #
+  #     - id: no-emoji
+  #       name: No emoji in code-facing text
+  #       entry: bash -c '! git diff --cached -U0 -- "*.py" | grep -P "^\+.*[\x{1F300}-\x{1FAFF}]"'
+  #       language: system
+  #       pass_filenames: false
