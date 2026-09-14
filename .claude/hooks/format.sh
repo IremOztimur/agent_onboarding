@@ -34,6 +34,7 @@ case "$file" in
   # UI files: run the slop check so the agent sees DESIGN.md bans while editing,
   # not at commit. Merge into the case above if it also matches these extensions.
   # *.css|*.scss|*.html|*.vue|*.svelte|*.astro|*.jsx|*.tsx|*.mdx)
+  #   command -v node >/dev/null 2>&1 || exit 0  # node not installed here
   #   if ! out=$(node "$CLAUDE_PROJECT_DIR/checks/design/slop-check.mjs" "$file" 2>&1); then
   #     printf 'slop-check found banned UI patterns in %s:\n%s\n' "$file" "$out" >&2
   #     exit 2

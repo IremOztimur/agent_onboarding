@@ -52,12 +52,12 @@ rounded:
   md: "{{px}}"
   full: 9999px
 spacing:
-  xs: 4px
-  sm: 8px
-  md: 16px
-  lg: 24px
-  xl: 40px
-  section: 64px
+  xs: "{{px}}"
+  sm: "{{px}}"
+  md: "{{px}}"
+  lg: "{{px}}"
+  xl: "{{px}}"
+  section: "{{px}}"
 components:
   page:
     backgroundColor: "{colors.surface}"
@@ -109,7 +109,8 @@ components:
      The front matter holds exact values. The prose is where the design lives:
      it tells the agent why, and covers what tokens cannot (states, motion, copy).
 
-     Never put a concrete font, color, or radius into the template itself.
+     Never put a concrete font, color, radius, spacing step, or duration into
+     the template itself.
      A value in the template becomes the default of every project, and a
      default shared by every project is what slop is.
 
@@ -196,7 +197,7 @@ Contrast floor: 4.5:1 for text, 3:1 for text at 24px and up (or 19px bold), focu
 
 ## Motion
 
-- Motion answers an action (open, expand, confirm, reorder) and shows what changed. Feedback (hover, press, toggle) takes 120ms, content transitions (panel, modal, page) 240ms, both on `cubic-bezier(0.2, 0, 0, 1)`. Nothing runs longer than 300ms.
+- Motion answers an action (open, expand, confirm, reorder) and shows what changed. Feedback (hover, press, toggle) takes {{ms}}, content transitions (panel, modal, page) {{ms}}, both on {{easing curve}}. Nothing runs longer than {{ms}}.
 - Content is already visible when it scrolls into view. Nothing animates because the page scrolled.
 - At most one orchestrated moment per page: {{none | what and where}}.
 - Nothing tracks the pointer.
@@ -249,7 +250,7 @@ Contrast floor: 4.5:1 for text, 3:1 for text at 24px and up (or 19px bold), focu
 - **Don't** put a badge or pill above the headline ("New", "Now in beta"). If news matters, it is the headline.
 - **Don't** put a Lucide icon (or any icon) on every label, bullet, and button. An icon earns its place with meaning. `slop/icon-everywhere`
 - **Don't** ship shadcn/ui, or any component library, in its default theme. Apply this file's tokens first.
-- **Don't** use a spacing value that is not in `spacing`. Add the step here first. `slop/off-scale-spacing`
+- **Don't** use a spacing value that is not in `spacing`. Add the step here first. `slop/off-scale-spacing` (checked once `spacing` is filled)
 
 **Motion and interaction**
 

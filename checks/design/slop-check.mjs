@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // Slop check: fail on the UI patterns DESIGN.md bans in every project.
 //
-//   node checks/design/slop-check.mjs              scan tracked + untracked (not ignored) files
-//   node checks/design/slop-check.mjs a.tsx b.css  scan only these files
+//   node checks/design/slop-check.mjs              scan tracked files
+//   node checks/design/slop-check.mjs a.tsx src/   scan only these files (a directory: its tracked files)
 //   node checks/design/slop-check.mjs --strict     warnings fail too
 //   node checks/design/slop-check.mjs --rules      list the rules
 //
 // Exit 0 = clean or warnings only. Exit 1 = errors (or warnings under --strict).
+// Exit 2 = bad flag or missing path.
 //
 // Suppress one finding on the same or the previous line, and say why:
 //   /* slop-ignore slop/glassmorphism: dialog backdrop, not a card surface */
@@ -23,8 +24,11 @@ import { extname, join, relative, resolve } from 'node:path';
 const LUCIDE_MAX_ICONS = 6;
 const MAX_BYTES = 1_000_000;
 
-const SKIP =
-  /(^|\/)(node_modules|\.git|dist|build|out|coverage|vendor|\.next|\.nuxt|\.svelte-kit|\.turbo|\.vercel)\/|\.min\.|(^|\/)DESIGN\.md$|(^|\/)checks\/design\//;
+// Always skipped. Build output is left to .gitignore: a folder named build/ or
+// out/ inside src/ is real code.
+const SKIP = /(^|\/)node_modules\/|^vendor\/|\.min\.|(^|\/)DESIGN\.md$|(^|\/)checks\/design\//;
+// Also skipped by the fallback walk, which has no .gitignore to lean on.
+const WALK_SKIP = /(^|\/)(\.git|dist|build|out|coverage|vendor|\.next|\.nuxt|\.svelte-kit|\.turbo|\.vercel)\//;
 const LOCALE_DIR = /(^|\/)(locales?|i18n|messages|lang|translations)\//;
 
 // style: stylesheets. sfc: markup that can hold <style> blocks. jsx: JSX/MDX.
@@ -46,35 +50,50 @@ const COPY = ['sfc', 'jsx', 'locale'];
 
 // ---------------------------------------------------------------- spacing scale
 
+// The project's scale, or null while DESIGN.md has none or still holds a
+// {{placeholder}} step. There is no built-in fallback: a default scale enforced
+// in every project is the kind of shared default DESIGN.md exists to avoid.
 function spacingScale(root) {
-  const fallback = { values: null, source: 'the 4px grid (DESIGN.md has no spacing scale)' };
   const path = join(root, 'DESIGN.md');
-  if (!existsSync(path)) return fallback;
+  if (!existsSync(path)) return null;
   const text = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
   const block = text.match(/^---\n([\s\S]*?)\n---/)?.[1].match(/^spacing:\n((?:[ \t]+.*(?:\n|$))*)/m);
-  if (!block) return fallback;
+  if (!block || block[1].includes('{{')) return null;
   const values = new Set([0]);
   for (const [, n, unit] of block[1].matchAll(/:\s*["']?(\d*\.?\d+)(px|rem)["']?\s*$/gm)) {
     values.add(unit === 'rem' ? Number(n) * 16 : Number(n));
   }
-  return values.size > 1 ? { values, source: 'DESIGN.md spacing' } : fallback;
+  return values.size > 1 ? values : null;
 }
 
-let SCALE = { values: null, source: '' };
+let SCALE = null;
 const toPx = (n, unit) => (unit === 'rem' || unit === 'em' ? Number(n) * 16 : Number(n));
-const onScale = (px) =>
-  px === 0 || (SCALE.values ? SCALE.values.has(Math.abs(px)) : Math.abs(px) % 4 === 0);
+// 1px and below is a hairline offset (sr-only margin: -1px, a border nudge), not spacing.
+const onScale = (px) => Math.abs(px) <= 1 || SCALE.has(Math.abs(px));
 
 // ---------------------------------------------------------------- helpers
 
-function inComment(lineText, col) {
-  const before = lineText.slice(0, col);
-  const t = before.trimStart();
-  if (t.startsWith('//') || t.startsWith('* ') || t === '*') return true;
-  if (/(^|[^:])\/\//.test(before)) return true;
-  if (before.lastIndexOf('/*') > before.lastIndexOf('*/')) return true;
-  if (before.lastIndexOf('<!--') > before.lastIndexOf('-->')) return true;
+function inComment(ctx, index, lineText, col) {
+  if (/(^|[^:])\/\//.test(lineText.slice(0, col))) return true;
+  // Block comments by their real extent, so an MDX "* item" line is not one.
+  ctx.blocks ??= [...ctx.text.matchAll(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g)].map((m) => [m.index, m.index + m[0].length]);
+  let lo = 0;
+  let hi = ctx.blocks.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [start, end] = ctx.blocks[mid];
+    if (index < start) hi = mid - 1;
+    else if (index >= end) lo = mid + 1;
+    else return true;
+  }
   return false;
+}
+
+// Nearest non-space characters on either side of a match, looking a short way.
+function neighbors(ctx, m) {
+  const prev = ctx.text.slice(Math.max(0, m.index - 80), m.index).match(/(\S)\s*$/)?.[1] ?? '';
+  const next = ctx.text.slice(m.index + m[0].length, m.index + m[0].length + 80).match(/^\s*(\S)/)?.[1] ?? '';
+  return { prev, next };
 }
 
 // Quoted strings on one line: where class names live in every framework.
@@ -131,11 +150,12 @@ const RULES = [
     kinds: CODE,
     message: 'Purple-to-blue gradient.',
     instead: 'Use a flat surface. A gradient is allowed only when it encodes data.',
+    // (?!\1-) skips a same-hue stop (via-indigo after from-indigo) without
+    // consuming the real partner further along.
     patterns: [
-      /\b(?:from|via)-(purple|violet|fuchsia|indigo)-\d{2,3}\b[^"'`\n]*?\b(?:via|to)-(blue|sky|cyan|indigo)-\d{2,3}\b/g,
-      /\b(?:from|via)-(blue|sky|cyan|indigo)-\d{2,3}\b[^"'`\n]*?\b(?:via|to)-(purple|violet|fuchsia|indigo)-\d{2,3}\b/g,
+      /\b(?:from|via)-(purple|violet|fuchsia|indigo)-\d{2,3}\b[^"'`\n]*?\b(?:via|to)-(?!\1-)(?:blue|sky|cyan|indigo)-\d{2,3}\b/g,
+      /\b(?:from|via)-(blue|sky|cyan|indigo)-\d{2,3}\b[^"'`\n]*?\b(?:via|to)-(?!\1-)(?:purple|violet|fuchsia|indigo)-\d{2,3}\b/g,
     ],
-    accept: (m) => m[1] !== m[2],
   },
   {
     id: 'slop/emoji-heading',
@@ -156,6 +176,12 @@ const RULES = [
     instead: 'Use a period, comma, colon, or parentheses.',
     patterns: [/\u2014|&mdash;|&#8212;|\\u2014/g],
     skipComments: true,
+    // A dash alone in a string or element ('\u2014', <td>\u2014</td>) is an empty-value
+    // placeholder, not a sentence.
+    accept: (m, ctx) => {
+      const { prev, next } = neighbors(ctx, m);
+      return !(/["'`>{]/.test(prev) && /["'`<}]/.test(next));
+    },
   },
   {
     id: 'slop/off-scale-spacing',
@@ -165,13 +191,12 @@ const RULES = [
     instead: 'Use a step from DESIGN.md spacing, or add the step there first.',
     run(ctx) {
       const hits = [];
+      if (!SCALE) return hits;
       if (UI.includes(ctx.kind)) {
         const tw =
           /(?<![\w-])(-?(?:p[xytrblse]?|m[xytrblse]?|gap(?:-[xy])?|space-[xy]))-\[(-?\d*\.?\d+)(px|rem|em)\]/g;
         for (const m of ctx.text.matchAll(tw)) {
-          const px = toPx(m[2], m[3]);
-          const util = px % 4 === 0 ? `; use ${m[1]}-${Math.abs(px) / 4}` : '';
-          hits.push({ index: m.index, detail: ` ${m[0]} is a one-off value${util}.` });
+          if (!onScale(toPx(m[2], m[3]))) hits.push({ index: m.index, detail: ` ${m[0]} is off DESIGN.md spacing.` });
         }
       }
       if (CSSY.includes(ctx.kind)) {
@@ -180,7 +205,7 @@ const RULES = [
         for (const m of ctx.text.matchAll(css)) {
           const bad = [...m[1].matchAll(/(-?\d*\.?\d+)(px|rem)\b/g)].filter(([, n, u]) => !onScale(toPx(n, u)));
           if (bad.length) {
-            hits.push({ index: m.index, detail: ` ${bad.map((b) => b[0]).join(', ')} is off ${SCALE.source}.` });
+            hits.push({ index: m.index, detail: ` ${bad.map((b) => b[0]).join(', ')} is off DESIGN.md spacing.` });
           }
         }
       }
@@ -219,10 +244,16 @@ const RULES = [
         }
       }
       if (CSSY.includes(ctx.kind)) {
-        for (const m of ctx.text.matchAll(/([^{}]*:hover[^{}]*)\{([^{}]*)\}/g)) {
-          const props = [...m[2].matchAll(/([\w-]+)\s*:/g)].map((p) => p[1]);
+        // Match the block alone and look back for its selector: a selector group
+        // in the regex backtracks quadratically over brace-free HTML.
+        for (const m of ctx.text.matchAll(/\{([^{}]*)\}/g)) {
+          const start = Math.max(ctx.text.lastIndexOf('}', m.index - 1), ctx.text.lastIndexOf('{', m.index - 1)) + 1;
+          const selector = ctx.text.slice(start, m.index);
+          const hover = selector.lastIndexOf(':hover');
+          if (hover < 0) continue;
+          const props = [...m[1].matchAll(/([\w-]+)\s*:/g)].map((p) => p[1]);
           if (props.includes('opacity') && props.every((p) => /^(opacity|transition(-[\w-]+)?|cursor)$/.test(p))) {
-            hits.push({ index: m.index + m[1].search(/\S/) });
+            hits.push({ index: start + selector.slice(0, hover).search(/[^\s,;>]*$/) });
           }
         }
       }
@@ -259,7 +290,7 @@ const RULES = [
       const hits = [];
       if (UI.includes(ctx.kind)) {
         for (const m of ctx.text.matchAll(QUOTED)) {
-          const side = m[2].search(/\bborder-[ltsb]-(?:2|4|8)\b/);
+          const side = m[2].search(/\bborder-[lts]-(?:2|4|8)\b/);
           if (side >= 0 && /\bborder-(?!gray|slate|zinc|neutral|stone|white|black|transparent)[a-z]+-\d{2,3}\b/.test(m[2])) {
             hits.push({ index: m.index + 1 + side });
           }
@@ -285,8 +316,7 @@ const RULES = [
     skipComments: true,
     // Skip identifiers: ({ unlock }), onClick={unlock}, unlock(), elevate: 2.
     accept: (m, ctx) => {
-      const prev = ctx.text.slice(0, m.index).match(/(\S)\s*$/)?.[1] ?? '';
-      const next = ctx.text.slice(m.index + m[0].length).match(/^\s*(\S)/)?.[1] ?? '';
+      const { prev, next } = neighbors(ctx, m);
       return !(/[.{(]/.test(prev) || /[(}=:)]/.test(next) || (prev === ',' && /[,}]/.test(next)));
     },
     detail: (m) => ` Found "${m[0]}".`,
@@ -355,7 +385,7 @@ function scanFile(display, kind, text) {
     const seen = new Set();
     for (const h of raw.sort((a, b) => a.index - b.index)) {
       const { line, col } = pos(h.index);
-      if (rule.skipComments && inComment(lines[line - 1], col - 1)) continue;
+      if (rule.skipComments && inComment(ctx, h.index, lines[line - 1], col - 1)) continue;
       if (ignored(rule, line)) continue;
       // One finding per rule per line; the first match carries the column.
       const key = `${line}:${rule.crossFile ? h.family : ''}:${h.detail ?? ''}`;
@@ -369,7 +399,9 @@ function scanFile(display, kind, text) {
 
 function listFiles(root) {
   try {
-    const out = execFileSync('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], {
+    // Tracked files only. Under pre-commit these hold the staged content; an
+    // untracked scratch file must not block an unrelated commit.
+    const out = execFileSync('git', ['ls-files', '-z', '--cached'], {
       cwd: root,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,
@@ -381,7 +413,7 @@ function listFiles(root) {
     const walk = (dir) => {
       for (const entry of readdirSync(join(root, dir), { withFileTypes: true })) {
         const rel = dir ? `${dir}/${entry.name}` : entry.name;
-        if (SKIP.test(`${rel}/`)) continue;
+        if (SKIP.test(`${rel}/`) || WALK_SKIP.test(`${rel}/`)) continue;
         if (entry.isDirectory()) walk(rel);
         else files.push(rel);
       }
@@ -419,7 +451,19 @@ function main(argv) {
 
   const root = repoRoot();
   SCALE = spacingScale(root);
-  const files = args.length ? args.map((a) => relative(root, resolve(a))) : listFiles(root);
+  let tracked;
+  const all = () => (tracked ??= listFiles(root));
+  const files = args.length ? [] : all();
+  for (const a of args) {
+    const rel = relative(root, resolve(a)).split('\\').join('/');
+    if (!existsSync(join(root, rel))) {
+      console.error(`slop-check: no such file or directory: ${a}`);
+      return 2;
+    }
+    // A directory means the tracked files under it, not zero files and a pass.
+    if (statSync(join(root, rel)).isDirectory()) files.push(...all().filter((f) => rel === '' || f.startsWith(`${rel}/`)));
+    else files.push(rel);
+  }
 
   let scanned = 0;
   const hits = [];
@@ -453,6 +497,7 @@ function main(argv) {
   const errors = report.filter((h) => h.rule.severity === 'error').length;
   const warnings = report.length - errors;
   console.log(`slop-check: ${errors} error(s), ${warnings} warning(s) in ${scanned} file(s)`);
+  if (!SCALE) console.log('slop-check: slop/off-scale-spacing skipped until DESIGN.md spacing is filled');
   if (report.length) {
     console.log("Reasons: DESIGN.md > Do's and Don'ts. Exception: slop-ignore <rule-id>: <reason>");
   }
