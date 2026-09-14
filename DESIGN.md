@@ -186,6 +186,7 @@ Contrast floor: 4.5:1 for text, 3:1 for text at 24px and up (or 19px bold), focu
 <!-- Tokens cover resting appearance. Write what they cannot: hover, focus,
      pressed, disabled, loading, empty, error. -->
 
+- **Reference code:** {{path to the page or component that best shows this system}}. Agents copy nearby code more than they follow this file, so point at the best example and keep it current.
 - **Library:** {{none | shadcn/ui | Radix | other}}. Library defaults are raw material. Every component takes this file's colors, radius, type, and spacing before it ships. A screen that looks like the library's docs site is unfinished.
 - **Buttons:** hover moves to {colors.primary-hover}. Focus shows a {{2px}} ring with offset, independent of hover. Pressed, disabled, and loading states are designed, not defaulted.
 - **Inputs:** visible label above the field. Placeholder is never the label. Error text says what is wrong and how to fix it.
@@ -222,43 +223,44 @@ Contrast floor: 4.5:1 for text, 3:1 for text at 24px and up (or 19px bold), focu
 <!-- These hold in every project. A brief that explicitly asks for one of
      these wins: lift the ban in "This project" with a reason, and record it in
      DECISIONS.md. Never lift one silently.
-     enforced by: `npx @google/design.md lint` covers contrast and token
-     references; the rest is nothing yet. -->
+     enforced by: a `slop/...` id is checked by checks/design/slop-check.mjs
+     (the check's output names the id); `design.md lint` covers contrast. A ban
+     with no id is caught only by screenshot and review. -->
 
 **Color and surface**
 
-- **Don't** use a purple-to-blue gradient, or any gradient as decoration.
-- **Don't** fill text with a gradient (`background-clip: text`).
-- **Don't** lay grain or noise over a gradient.
-- **Don't** use glassmorphism: translucent cards over a backdrop blur.
-- **Don't** give cards a colored border (top, left, or all around) as an accent.
-- **Don't** ship a low-contrast dark mode.
+- **Don't** use a purple-to-blue gradient, or any gradient as decoration. Use a flat surface. `slop/purple-blue-gradient` `slop/gradient`
+- **Don't** fill text with a gradient (`background-clip: text`). Text takes one solid color. `slop/gradient-text`
+- **Don't** lay grain or noise over a gradient. Surfaces are flat. `slop/grain-overlay`
+- **Don't** use glassmorphism: translucent cards over a backdrop blur. Surfaces are opaque. `slop/glassmorphism`
+- **Don't** give cards a colored border (top, left, or all around) as an accent. Separate with space or tone. `slop/colored-border-card`
+- **Don't** ship a low-contrast dark mode. Dark pairs meet the same AA floor as light. `design.md lint: contrast-ratio`
 
 **Type**
 
-- **Don't** reach for Inter by default. Choose for the subject and write the reason.
-- **Don't** pair Space Grotesk with Instrument Serif.
-- **Don't** drop serif italic accent words into headlines.
-- **Don't** put emojis in headings.
+- **Don't** reach for Inter by default. Choose for the subject and write the reason in Typography. `slop/font-inter`
+- **Don't** pair Space Grotesk with Instrument Serif. `slop/font-pair`
+- **Don't** drop serif italic accent words into headlines. A headline has one color, one style.
+- **Don't** put emojis in headings. Let the words carry it. `slop/emoji-heading`
 
 **Layout and components**
 
 - **Don't** build a row of three icon boxes (icon, title, one-line blurb). Show the product, a real example, or a list with substance.
-- **Don't** put a badge or pill above the headline ("New", "Now in beta").
-- **Don't** put a Lucide icon (or any icon) on every label, bullet, and button.
-- **Don't** ship shadcn/ui, or any component library, in its default theme.
-- **Don't** use a spacing value that is not in `spacing`.
+- **Don't** put a badge or pill above the headline ("New", "Now in beta"). If news matters, it is the headline.
+- **Don't** put a Lucide icon (or any icon) on every label, bullet, and button. An icon earns its place with meaning. `slop/icon-everywhere`
+- **Don't** ship shadcn/ui, or any component library, in its default theme. Apply this file's tokens first.
+- **Don't** use a spacing value that is not in `spacing`. Add the step here first. `slop/off-scale-spacing`
 
 **Motion and interaction**
 
-- **Don't** fade or slide content in on scroll.
-- **Don't** add cursor-following beams, spotlights, or glows.
-- **Don't** make hover an opacity fade. Hover changes color, underline, or elevation.
+- **Don't** fade or slide content in on scroll. Content is visible when it arrives. `slop/scroll-reveal`
+- **Don't** add cursor-following beams, spotlights, or glows. `slop/cursor-follow`
+- **Don't** make hover an opacity fade. Hover changes color, underline, or elevation. `slop/opacity-hover`
 
 **Copy**
 
-- **Don't** use em dashes in UI copy.
-- **Don't** write generic buzzword copy.
+- **Don't** use em dashes in UI copy. Use a period, comma, colon, or parentheses. `slop/em-dash-copy`
+- **Don't** write generic buzzword copy. Say what the product does. `slop/buzzword`
 
 **Same failure, other forms**
 

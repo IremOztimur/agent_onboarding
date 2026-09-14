@@ -20,6 +20,8 @@ agent is allowed to write, so their value scales with sessions, not codebase siz
 | Secrets not committed | `detect-private-key`, `gitleaks` |
 | Generated file stays in sync | regenerate, then `git diff --exit-code` |
 | Lockfile current | `uv lock --check` / `--frozen-lockfile` |
+| Banned UI patterns from `DESIGN.md` | `node checks/design/slop-check.mjs` |
+| Design tokens resolve, contrast meets AA | `npx @google/design.md lint DESIGN.md` |
 
 ## Day one
 
@@ -35,3 +37,19 @@ uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
 
 Delete rules you are not willing to keep green. A permanently red check teaches
 agents to bypass the whole suite.
+
+## Design
+
+For any project with a UI. Merge `checks/design/pre-commit.snippet.yaml` into
+`.pre-commit-config.yaml`; `node checks/design/slop-check.mjs --rules` lists
+what it catches.
+
+A rule is a check only when code can see the problem without rendering, false
+positives are rare, and the fix is concrete. Those fail the commit. Likely but
+fuzzy patterns warn. The rest (a row of three icon boxes, a badge above the
+headline, a library left in its default theme) stay prose in `DESIGN.md` and
+are caught by screenshots and review. Green checks do not mean good design.
+
+Exceptions are written where they happen, with a reason:
+`slop-ignore slop/<rule>: <why>`. A rule that keeps collecting them belongs
+back in prose.

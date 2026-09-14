@@ -31,5 +31,13 @@ case "$file" in
   # *.ts|*.tsx|*.js|*.jsx)
   #   npx --no-install prettier --write "$file" >/dev/null 2>&1 || true
   #   ;;
+  # UI files: run the slop check so the agent sees DESIGN.md bans while editing,
+  # not at commit. Merge into the case above if it also matches these extensions.
+  # *.css|*.scss|*.html|*.vue|*.svelte|*.astro|*.jsx|*.tsx|*.mdx)
+  #   if ! out=$(node "$CLAUDE_PROJECT_DIR/checks/design/slop-check.mjs" "$file" 2>&1); then
+  #     printf 'slop-check found banned UI patterns in %s:\n%s\n' "$file" "$out" >&2
+  #     exit 2
+  #   fi
+  #   ;;
   *) exit 0 ;;
 esac
