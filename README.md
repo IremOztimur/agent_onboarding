@@ -30,6 +30,7 @@ rule, not a paragraph.
 AGENTS.md            the constitution — vendor-neutral, ~60 lines, always loaded
 CLAUDE.md            @AGENTS.md — a pointer, never a fork
 DECISIONS.md         what was decided and rejected, with reasons
+DESIGN.md            visual identity for agent-built UI: tokens, rules, banned patterns
 
 .agents/skills/      procedures the harness does not already own: plan, commit
 .claude/skills/      symlinks into .agents/skills — never copies

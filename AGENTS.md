@@ -59,6 +59,7 @@ Full procedure: `.agents/skills/commit/SKILL.md`.
 | For | Read |
 |---|---|
 | what was decided or rejected, and why | `DECISIONS.md` |
+| visual identity and banned UI patterns — read before any UI work | `DESIGN.md` |
 | depth on {{area}} | `docs/guides/{{area}}.md` |
 | work in flight | `docs/plans/` |
 
