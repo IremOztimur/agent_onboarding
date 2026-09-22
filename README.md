@@ -1,17 +1,14 @@
 # Agent Onboarding
 
-Researched templates for the files your coding agent reads, and skills that
-fill them in with you.
+Onboard your coding agent to a new project, fast.
+
+I collected the best practices for writing specs and setting up a workspace.
+Then I built skills that fill them in for you.
 
 ![Agent Onboarding: always loaded, read on demand, enforced](https://github.com/user-attachments/assets/9d8e9e2b-6c5a-41a4-8eab-1bc5715255d1)
 
 Copy the template. Run a `/setup-*` skill. Answer a few questions, it writes
 the file.
-
-Nobody has to research what belongs in `AGENTS.md` or `DESIGN.md` from
-scratch, or reverse a good structure out of someone else's repo. That
-research is already done, cited in References below, and turned into a skill
-that asks instead of guesses.
 
 ## The problem
 
