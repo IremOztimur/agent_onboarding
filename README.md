@@ -56,8 +56,9 @@ checks/              linter + pre-commit starters
    If it cannot answer from `AGENTS.md` alone, that file is not done yet.
 
 Add `DECISIONS.md` entries as you make real choices, a guide when a section of
-`AGENTS.md` grows past ~40 lines, and a directory `AGENTS.md` when a rule only
-applies there.
+`AGENTS.md` grows past ~40 lines, a directory `AGENTS.md` when a rule only
+applies there, and `docs/guides/review.md` once you have invariants a generic
+reviewer can't infer from the diff.
 
 **Write a skill only when it overrides a harness default or encodes a convention
 the harness cannot guess.** Re-teaching something the agent already does — how to

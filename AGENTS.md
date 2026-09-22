@@ -41,6 +41,9 @@ Never invent an invocation. If a command is missing here, ask for it, then add i
 - Style is the linter's job. Run the lint command; do not hand-police formatting.
 - The worktree may hold human edits. Inspect current content before editing and
   preserve unrelated changes.
+- Before reporting a change done, run the test and lint commands above and reach
+  green; if a check fails or can't run, say so instead of reporting done.
+- Before opening a PR, run `/code-review` at the level the change warrants.
 
 ## Reporting
 
