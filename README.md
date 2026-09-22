@@ -1,17 +1,24 @@
-# Agent Markdown Layer
+# Agent Onboarding
 
-A starting skeleton for a project you build together with a coding agent
-across many sessions.
+Researched templates for the files your coding agent reads, and skills that
+fill them in with you.
 
-Copy it. Fill in `AGENTS.md`. Delete what you don't use.
+![Agent Onboarding: always loaded, read on demand, enforced](https://github.com/user-attachments/assets/9d8e9e2b-6c5a-41a4-8eab-1bc5715255d1)
+
+Copy the template. Run a `/setup-*` skill. Answer a few questions, it writes
+the file.
+
+Nobody has to research what belongs in `AGENTS.md` or `DESIGN.md` from
+scratch, or reverse a good structure out of someone else's repo. That
+research is already done, cited in References below, and turned into a skill
+that asks instead of guesses.
 
 ## The problem
 
 **Without it:** four sessions in, the agent still asks what the test command is.
 **With it:** session one already knows, because `AGENTS.md` said so.
 
-Nobody wants to re-explain the same handful of facts every week. Write them
-down once.
+Nobody wants to re-explain the same handful of facts every week. Write them down once.
 
 ## Quickstart
 
@@ -72,8 +79,12 @@ task:
 - the rules that must never break
 
 Depth lives in `docs/guides/`. In-flight work lives in `docs/plans/`. Settled
-arguments live in `DECISIONS.md`. Anything a linter can enforce becomes a
-linter rule, not a paragraph.
+arguments live in `DECISIONS.md`.
+
+Anything a tool can check stops being a sentence in `AGENTS.md` and becomes a
+check instead. The format hook runs on every edit. Pre-commit runs on every
+commit. When one fails, the agent fixes it, it doesn't get to skip it.
+Starter configs for both live in `checks/`.
 
 This isn't a house preference. It matches how the underlying tooling actually
 behaves, and how its own maintainers say to use it. See References.
