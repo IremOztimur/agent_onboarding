@@ -1,73 +1,119 @@
 # Agent Markdown Layer
 
-A small starting skeleton for a new project you will build together with a
-coding agent. Copy it, fill it in, delete what you do not use.
+A starting skeleton for a project you build together with a coding agent
+across many sessions.
 
-## When to use it
+Copy it. Fill in `AGENTS.md`. Delete what you don't use.
 
-Take it when a repository will be worked on with a coding agent across more than
-a few sessions — that is when an agent re-deriving the stack, the test command,
-and last month's rejected idea starts costing real time.
+## The problem
 
-Skip it for a throwaway script or a spike you will delete. Take the pieces you
-need: `AGENTS.md` alone is most of the value, and every other file here earns its
-place only once a specific problem shows up.
+**Without it:** four sessions in, the agent still asks what the test command is.
+**With it:** session one already knows, because `AGENTS.md` said so.
 
-## Principle
+Nobody wants to re-explain the same handful of facts every week. Write them
+down once.
 
-**Load permanent context always, everything else on demand — and prefer a check
-over a sentence.**
+## Quickstart
 
-`AGENTS.md` is paid for on every request, so it holds only what is true for every
-task: what the project is, how to run and test it, and the few rules that must
-never break. Depth lives in `docs/guides/`, in-flight work in `docs/plans/`,
-settled arguments in `DECISIONS.md`. Anything a linter can enforce is a linter
-rule, not a paragraph.
+1. Clone it and drop the git history.
+   ```
+   git clone git@github.com:IremOztimur/markdown_layer.git <new-project>
+   cd <new-project> && rm -rf .git && git init
+   ```
+2. Fill `AGENTS.md`. Run `/setup-agents` to fill it through conversation, or
+   write it by hand. Either way, the Project and Commands sections carry most
+   of the value. Leave a rule out rather than guess at it. An unfilled
+   `{{TOKEN}}` is an instruction to follow nonsense.
+3. Adopt the checks. Copy `checks/python/*` into place, then run:
+   ```
+   uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
+   ```
+4. Point `.claude/hooks/format.sh` at your formatter.
+5. Ask an agent what the project does and how to run its tests. If it can't
+   answer from `AGENTS.md` alone, the file isn't done yet.
+
+The rest is on demand, not day one. Run `/setup-design` once there's UI work
+to do. Run `/setup-review` once a generic reviewer has missed something a
+project invariant would have caught.
+
+Add a `DECISIONS.md` entry each time you make a real choice. Add a guide once
+a section of `AGENTS.md` passes about 40 lines. Add a directory `AGENTS.md`
+once a rule only applies there.
 
 ## Layout
 
 ```
-AGENTS.md            the constitution — vendor-neutral, ~60 lines, always loaded
-CLAUDE.md            @AGENTS.md — a pointer, never a fork
+AGENTS.md            the constitution: vendor-neutral, about 60 lines, always loaded
+CLAUDE.md            @AGENTS.md, a pointer, never a fork
 DECISIONS.md         what was decided and rejected, with reasons
 DESIGN.md            visual identity for agent-built UI: tokens, rules, banned patterns
 
-.agents/skills/      procedures the harness does not already own: plan, commit,
+.agents/skills/      procedures the harness doesn't already own: plan, commit,
                      setup-agents, setup-design, setup-review
-.claude/skills/      symlinks into .agents/skills — never copies
-.claude/settings.json  format-on-write hook + read-only command allowlist
+.claude/skills/      symlinks into .agents/skills, never copies
+.claude/settings.json  format-on-write hook plus a read-only command allowlist
 
 docs/guides/         durable depth, one file per area, read when that area is touched
 docs/plans/          dated plans for multi-session work, deleted on completion
 
-checks/              linter + pre-commit starters
+checks/              pre-commit starters: python lint, DESIGN.md slop-check
 ```
 
-## Start a new project
+## Principle
 
-1. `git clone git@github.com:IremOztimur/markdown_layer.git <new-project>` then
-   `cd <new-project> && rm -rf .git && git init`
-2. **Fill `AGENTS.md`.** Run `/setup-agents` to fill it through conversation,
-   or write it by hand — Project and Commands carry most of the value either
-   way. Leave a rule out rather than guessing at it; an unfilled `{{TOKEN}}`
-   is an instruction to follow nonsense.
-3. Adopt the checks: copy `checks/python/*` into place and
-   `uv run pre-commit install --hook-type pre-commit --hook-type commit-msg`.
-4. Point `.claude/hooks/format.sh` at your formatter.
-5. Ask an agent: *"What does this project do and how do I run its tests?"*
-   If it cannot answer from `AGENTS.md` alone, that file is not done yet.
+**Load what's always true into context. Load everything else on demand.
+Prefer a check over a sentence.**
 
-The rest is on demand, not day one: `/setup-design` once there's UI work to
-do, `/setup-review` once a generic reviewer has missed something a project
-invariant would have caught. Add `DECISIONS.md` entries as you make real
-choices, a guide when a section of `AGENTS.md` grows past ~40 lines, and a
-directory `AGENTS.md` when a rule only applies there.
+`AGENTS.md` is paid for on every request. It holds only what's true for every
+task:
 
-**Write a skill only when it overrides a harness default or encodes a convention
-the harness cannot guess.** Re-teaching something the agent already does — how to
-plan, how to review a diff — produces a weaker copy of a built-in that drifts
-further behind with every release. `commit` exists because the harness injects a
-`Co-authored-by` trailer this repository does not want, and because branch and
-push policy are per-project. `setup-agents`/`setup-design`/`setup-review` exist
-because "ask, never guess, when filling a template" is a convention no harness
-default encodes. That is the bar.
+- what the project is
+- how to run it and test it
+- the rules that must never break
+
+Depth lives in `docs/guides/`. In-flight work lives in `docs/plans/`. Settled
+arguments live in `DECISIONS.md`. Anything a linter can enforce becomes a
+linter rule, not a paragraph.
+
+This isn't a house preference. It matches how the underlying tooling actually
+behaves, and how its own maintainers say to use it. See References.
+
+## When to use it
+
+Take it when a repository will be worked on with a coding agent for more than
+a few sessions. Skip it for a throwaway script or a spike you'll delete.
+
+Take pieces, not the whole thing. `AGENTS.md` does most of the work here.
+Every other file earns its place once a specific problem shows up, not
+before.
+
+**Write a skill only when it overrides a harness default or encodes a
+convention the harness can't guess.** Re-teaching something the agent already
+does, like how to plan or how to review a diff, produces a weaker copy of a
+built-in that drifts further behind with every release. `commit` exists
+because the harness injects a `Co-authored-by` trailer this repository
+doesn't want, and because branch and push policy are per-project.
+`setup-agents`/`setup-design`/`setup-review` exist because "ask, never guess,
+when filling a template" is a convention no harness default encodes. That's
+the bar.
+
+## References
+
+- [agents.md](https://agents.md/): the open AGENTS.md convention. This repo
+  didn't invent the format, it fills in the file the convention defines.
+- [Claude Code memory docs](https://docs.anthropic.com/en/docs/claude-code/memory):
+  confirms `CLAUDE.md` and its `@import`s load into every session. "Always
+  loaded" above isn't a metaphor.
+- [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md)
+  (HumanLayer): the rationale behind the Principle. Keep the always-loaded
+  file universal. Prefer a deterministic check over an instruction. Push
+  task-specific depth into files referenced by `file:line`, not pasted in.
+- [Architectural Decision Records](https://adr.github.io/): the convention
+  `DECISIONS.md` borrows. Decision plus reason. Append-only. Superseded,
+  never deleted.
+- [Claude Code Skills](https://code.claude.com/docs/en/skills): the feature
+  `.agents/skills` and `.claude/skills` build on.
+
+## License
+
+Apache-2.0. See `LICENSE`.
