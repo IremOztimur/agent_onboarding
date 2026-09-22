@@ -32,7 +32,8 @@ CLAUDE.md            @AGENTS.md — a pointer, never a fork
 DECISIONS.md         what was decided and rejected, with reasons
 DESIGN.md            visual identity for agent-built UI: tokens, rules, banned patterns
 
-.agents/skills/      procedures the harness does not already own: plan, commit
+.agents/skills/      procedures the harness does not already own: plan, commit,
+                     setup-agents, setup-design, setup-review
 .claude/skills/      symlinks into .agents/skills — never copies
 .claude/settings.json  format-on-write hook + read-only command allowlist
 
@@ -46,22 +47,27 @@ checks/              linter + pre-commit starters
 
 1. `git clone git@github.com:IremOztimur/markdown_layer.git <new-project>` then
    `cd <new-project> && rm -rf .git && git init`
-2. **Write `AGENTS.md` by hand.** Fill the Project and Commands sections first —
-   they carry most of the value. Leave a rule out rather than guessing at it;
-   an unfilled `{{TOKEN}}` is an instruction to follow nonsense.
+2. **Fill `AGENTS.md`.** Run `/setup-agents` to fill it through conversation,
+   or write it by hand — Project and Commands carry most of the value either
+   way. Leave a rule out rather than guessing at it; an unfilled `{{TOKEN}}`
+   is an instruction to follow nonsense.
 3. Adopt the checks: copy `checks/python/*` into place and
    `uv run pre-commit install --hook-type pre-commit --hook-type commit-msg`.
 4. Point `.claude/hooks/format.sh` at your formatter.
 5. Ask an agent: *"What does this project do and how do I run its tests?"*
    If it cannot answer from `AGENTS.md` alone, that file is not done yet.
 
-Add `DECISIONS.md` entries as you make real choices, a guide when a section of
-`AGENTS.md` grows past ~40 lines, and a directory `AGENTS.md` when a rule only
-applies there.
+The rest is on demand, not day one: `/setup-design` once there's UI work to
+do, `/setup-review` once a generic reviewer has missed something a project
+invariant would have caught. Add `DECISIONS.md` entries as you make real
+choices, a guide when a section of `AGENTS.md` grows past ~40 lines, and a
+directory `AGENTS.md` when a rule only applies there.
 
 **Write a skill only when it overrides a harness default or encodes a convention
 the harness cannot guess.** Re-teaching something the agent already does — how to
 plan, how to review a diff — produces a weaker copy of a built-in that drifts
 further behind with every release. `commit` exists because the harness injects a
 `Co-authored-by` trailer this repository does not want, and because branch and
-push policy are per-project. That is the bar.
+push policy are per-project. `setup-agents`/`setup-design`/`setup-review` exist
+because "ask, never guess, when filling a template" is a convention no harness
+default encodes. That is the bar.

@@ -6,8 +6,15 @@
 
 ## Decided
 
-**{{The decision, stated as a rule.}}**
-{{Why — the reasoning an agent would otherwise reconstruct wrongly.}}
+**Verification and review are `AGENTS.md` workflow lines that point at existing
+tools, not new skills.**
+The harness already runs a verify-iterate loop and ships `/code-review`; a
+custom skill for either would duplicate a harness default and drift out of
+date (see the "write a skill only when..." bar in `README.md`). The actual
+gap was connective tissue: a rule naming the check and requiring green before
+"done" is reported, and a pointer to run `/code-review` before a PR.
+Repo-specific invariants a generic reviewer can't infer from the diff belong
+in `docs/guides/review.md`, not a bespoke review skill.
 
 ## Rejected
 
