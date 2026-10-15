@@ -1,0 +1,19 @@
+{
+  "name": "agent-onboarding",
+  "version": "0.2.0",
+  "description": "Loop engineering for coding agents. Skills that ask, never guess: they write your AGENTS.md, DESIGN.md, review guide and workflow from your own answers.",
+  "author": {
+    "name": "Irem Oztimur",
+    "url": "https://github.com/IremOztimur"
+  },
+  "homepage": "https://github.com/IremOztimur/agent_onboarding",
+  "repository": "https://github.com/IremOztimur/agent_onboarding",
+  "license": "Apache-2.0",
+  "keywords": [
+    "agents-md",
+    "loop-engineering",
+    "sdlc",
+    "skills",
+    "workflow"
+  ]
+}

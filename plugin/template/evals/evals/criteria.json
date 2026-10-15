@@ -1,0 +1,5 @@
+{
+  "task_fidelity": {"threshold": 0.9, "intent": "INTENT.md § Success criteria: {{criterion}}"},
+  "format": {"threshold": 0.98, "intent": "INTENT.md § Success criteria: {{criterion}}"},
+  "outcome": {"threshold": 0.9, "intent": "INTENT.md § Success criteria: {{criterion}}"}
+}
