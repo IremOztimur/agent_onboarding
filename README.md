@@ -1,127 +1,130 @@
 # Agent Onboarding
 
-Onboard your coding agent to a new project, fast.
+**Make any repo agent-ready in ten minutes, without adopting someone else's process.**
 
-I collected the best practices for writing specs and setting up a workspace.
-Then I built skills that fill them in for you.
+A Claude Code plugin that interviews you about your project and writes the
+files your coding agent reads: what the project is, how to run and test it,
+the rules that must never break. It installs only what your project needs,
+and every file it writes is yours to edit.
 
-![Agent Onboarding: always loaded, read on demand, enforced](https://github.com/user-attachments/assets/9d8e9e2b-6c5a-41a4-8eab-1bc5715255d1)
+## Why
 
-Copy the template. Run a `/setup-*` skill. Answer a few questions, it writes
-the file.
-
-## The problem
-
-**Without it:** four sessions in, the agent still asks what the test command is.
-**With it:** session one already knows, because `AGENTS.md` said so.
-
-Nobody wants to re-explain the same handful of facts every week. Write them down once.
+| Without it | With it |
+|---|---|
+| Session four, the agent still asks for the test command | Session one knows it, because `AGENTS.md` says so |
+| "Done!", with no proof | "Done" means the test tier ran green, with the output pasted |
+| A failing test gets "fixed" by skipping it | A weakened test is flagged as a finding, not merged |
+| A one-file CLI gets a full-stack scaffold | A script gets one file; a big app gets the full set |
+| A prompt change ships on vibes | LLM behavior is evaluated against a baseline before it ships |
 
 ## Quickstart
 
-1. Clone it and drop the git history.
-   ```
-   git clone git@github.com:IremOztimur/markdown_layer.git <new-project>
-   cd <new-project> && rm -rf .git && git init
-   ```
-2. Fill `AGENTS.md`. Run `/setup-agents` to fill it through conversation, or
-   write it by hand. Either way, the Project and Commands sections carry most
-   of the value. Leave a rule out rather than guess at it. An unfilled
-   `{{TOKEN}}` is an instruction to follow nonsense.
-3. Adopt the checks. Copy `checks/python/*` into place, then run:
-   ```
-   uv run pre-commit install --hook-type pre-commit --hook-type commit-msg
-   ```
-4. Point `.claude/hooks/format.sh` at your formatter.
-5. Ask an agent what the project does and how to run its tests. If it can't
-   answer from `AGENTS.md` alone, the file isn't done yet.
-
-The rest is on demand, not day one. Run `/setup-design` once there's UI work
-to do. Run `/setup-review` once a generic reviewer has missed something a
-project invariant would have caught.
-
-Add a `DECISIONS.md` entry each time you make a real choice. Add a guide once
-a section of `AGENTS.md` passes about 40 lines. Add a directory `AGENTS.md`
-once a rule only applies there.
-
-## Layout
-
 ```
-AGENTS.md            the constitution: vendor-neutral, about 60 lines, always loaded
-CLAUDE.md            @AGENTS.md, a pointer, never a fork
-DECISIONS.md         what was decided and rejected, with reasons
-DESIGN.md            visual identity for agent-built UI: tokens, rules, banned patterns
-
-.agents/skills/      procedures the harness doesn't already own: plan, commit,
-                     setup-agents, setup-design, setup-review
-.claude/skills/      symlinks into .agents/skills, never copies
-.claude/settings.json  format-on-write hook plus a read-only command allowlist
-
-docs/guides/         durable depth, one file per area, read when that area is touched
-docs/plans/          dated plans for multi-session work, deleted on completion
-
-checks/              pre-commit starters: python lint, DESIGN.md slop-check
+/plugin marketplace add IremOztimur/agent_onboarding
+/plugin install agent-onboarding@agent-onboarding
 ```
 
-## Principle
+Then, inside your project:
 
-**Load what's always true into context. Load everything else on demand.
-Prefer a check over a sentence.**
+```
+/agent-onboarding:init            # looks at the repo, asks its shape, installs what fits
+/agent-onboarding:setup-intent    # what the product is for, and what "working" means
+/agent-onboarding:setup-agents    # commands, stack, the rules that must not break
+/agent-onboarding:setup-testing   # test tiers, fixtures, and evals for LLM features
+```
 
-`AGENTS.md` is paid for on every request. It holds only what's true for every
-task:
+Each skill asks a few questions and writes the answers down. It never
+guesses: an answer you don't have stays a visible `{{TOKEN}}`, not a
+plausible invention. `init` never overwrites an existing file.
 
-- what the project is
-- how to run it and test it
-- the rules that must never break
+**Done when:** a fresh agent session can tell you what the project does and
+how to test it, from the files alone.
 
-Depth lives in `docs/guides/`. In-flight work lives in `docs/plans/`. Settled
-arguments live in `DECISIONS.md`.
+## What lands in your repo
 
-Anything a tool can check stops being a sentence in `AGENTS.md` and becomes a
-check instead. The format hook runs on every edit. Pre-commit runs on every
-commit. When one fails, the agent fixes it, it doesn't get to skip it.
-Starter configs for both live in `checks/`.
+`init` picks modules from your project's shape. Re-run it to add one later.
 
-This isn't a house preference. It matches how the underlying tooling actually
-behaves, and how its own maintainers say to use it. See References.
+| Your project | You get |
+|---|---|
+| A script | `AGENTS.md` |
+| Small, a few sessions | + `INTENT.md`, `docs/guides/testing.md`, `commit` and `test` skills, a `verifier` agent, a format hook |
+| Multi-session work | + `plan` skill, `docs/plans/`, `docs/guides/workflow.md`, `DECISIONS.md` |
+| Has a UI | + `DESIGN.md` and a check that blocks generic AI-look UI patterns |
+| Runs an LLM or an agent | + `evals/`: cases, graders, a runner, a baseline |
 
-## When to use it
+The key files:
 
-Take it when a repository will be worked on with a coding agent for more than
-a few sessions. Skip it for a throwaway script or a spike you'll delete.
+- **`AGENTS.md`**: loaded on every request, so it holds only what's always
+  true: the project, its commands, its rules. Works with any agent that reads
+  [AGENTS.md](https://agents.md/).
+- **`INTENT.md`**: why the project exists and its success criteria, written
+  so a test or an eval can check them.
+- **`docs/guides/testing.md`**: which tests a change needs, what may be
+  mocked, and the rule the agent can't break: never weaken a test to pass.
+- **`evals/`**: for LLM features. Runs each case several times, grades the
+  outcome (code graders first, an LLM judge only when needed), compares
+  against a baseline, and self-tests offline with `--dry-run`.
 
-Take pieces, not the whole thing. `AGENTS.md` does most of the work here.
-Every other file earns its place once a specific problem shows up, not
-before.
+## How it works
 
-**Write a skill only when it overrides a harness default or encodes a
-convention the harness can't guess.** Re-teaching something the agent already
-does, like how to plan or how to review a diff, produces a weaker copy of a
-built-in that drifts further behind with every release. `commit` exists
-because the harness injects a `Co-authored-by` trailer this repository
-doesn't want, and because branch and push policy are per-project.
-`setup-agents`/`setup-design`/`setup-review` exist because "ask, never guess,
-when filling a template" is a convention no harness default encodes. That's
-the bar.
+1. **It asks, you answer.** How your agent works is your methodology. The
+   plugin only asks questions; the answers and defaults live in your repo,
+   and a plugin update never changes them.
+2. **Always-true goes in context, the rest on demand.** `AGENTS.md` stays
+   short. Depth lives in `docs/guides/`, plans in `docs/plans/`, settled
+   arguments in `DECISIONS.md`.
+3. **A check beats a sentence.** Anything a tool can enforce becomes a hook
+   or a pre-commit check, not a line the agent may ignore.
 
-## References
+The default workflow, which you can keep, edit, or replace with
+`/agent-onboarding:setup-workflow`:
 
-- [agents.md](https://agents.md/): the open AGENTS.md convention. This repo
-  didn't invent the format, it fills in the file the convention defines.
-- [Claude Code memory docs](https://docs.anthropic.com/en/docs/claude-code/memory):
-  confirms `CLAUDE.md` and its `@import`s load into every session. "Always
-  loaded" above isn't a metaphor.
-- [Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md)
-  (HumanLayer): the rationale behind the Principle. Keep the always-loaded
-  file universal. Prefer a deterministic check over an instruction. Push
-  task-specific depth into files referenced by `file:line`, not pasted in.
-- [Architectural Decision Records](https://adr.github.io/): the convention
-  `DECISIONS.md` borrows. Decision plus reason. Append-only. Superseded,
-  never deleted.
-- [Claude Code Skills](https://code.claude.com/docs/en/skills): the feature
-  `.agents/skills` and `.claude/skills` build on.
+**Intent → Design → Plan → Build → Test → Review → Learn**
+
+Each step leaves a file the next one reads. You decide at the gates; the
+agent works between them. The same mistake twice becomes a rule or a check.
+
+## FAQ
+
+**Will it overwrite my files?** No. `init` lists every conflict and asks:
+keep yours, take the template's, or merge.
+
+**Do I need Claude Code?** For the interview skills, yes. The files
+themselves are vendor-neutral; to use them with another agent, copy the
+modules from `plugin/template/` by hand (see `AGENTS.md` comments for the
+`module:` markers to trim).
+
+**How is this different from Spec Kit or Superpowers?** Those give you a
+process. This one writes down yours, sized to the project, and adds a real
+eval harness for LLM features.
+
+**Is it worth it for a tiny project?** For a throwaway script, `init`
+installs one file. Skip it entirely for code you'll delete this week.
+
+## All skills
+
+| Skill | Writes |
+|---|---|
+| `init` | the modules that fit your project |
+| `setup-intent` | `INTENT.md` |
+| `setup-agents` | `AGENTS.md` |
+| `setup-testing` | `docs/guides/testing.md`, `evals/` |
+| `setup-workflow` | `docs/guides/workflow.md`, your own loop |
+| `setup-design` | `DESIGN.md` |
+| `setup-review` | `docs/guides/review.md`, invariants a diff review can't see |
+
+## Built on
+
+[AI-Native SDLC Playbook](https://academy.claude.com/courses/ai-native-sdlc-playbook/introduction) ·
+[Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) ·
+[Define success criteria and build evaluations](https://platform.claude.com/docs/en/test-and-evaluate/develop-tests) ·
+[Trustworthy third party evaluations](https://openai.com/index/trustworthy-third-party-evaluations-foundations/) ·
+[agents.md](https://agents.md/) ·
+[Writing a good CLAUDE.md](https://www.humanlayer.dev/blog/writing-a-good-claude-md) ·
+[ADRs](https://adr.github.io/)
+
+Design decisions for this repo, with reasons: [`DECISIONS.md`](DECISIONS.md).
 
 ## License
 
-Apache-2.0. See `LICENSE`.
+Apache-2.0

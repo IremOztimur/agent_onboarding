@@ -1,0 +1,15 @@
+{
+  "name": "agent-onboarding",
+  "description": "Agent Onboarding: loop engineering for coding agents, as a Claude Code plugin.",
+  "owner": {
+    "name": "Irem Oztimur",
+    "url": "https://github.com/IremOztimur"
+  },
+  "plugins": [
+    {
+      "name": "agent-onboarding",
+      "source": "./plugin",
+      "description": "Setup skills that write a project's AGENTS.md, DESIGN.md, review guide and workflow from the human's own answers. Pairs with template/."
+    }
+  ]
+}
